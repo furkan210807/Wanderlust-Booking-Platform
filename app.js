@@ -32,6 +32,17 @@ app.engine('ejs',ejsMate);
 app.get("/",(req,res)=>{
     res.send("Working the app");
 });
+const  validateListing = (req,res,next)=>{
+    let {error} =  listingSchema.validate(req.body);
+    if(error){
+        let errMsg = error.datails.map((el)=> el.message).join(",");
+        throw new ExpressError(404,errMsg)
+    }else{
+        next();
+    }
+
+}
+
 
 app.get("/testListing",wrapAsync(async (req,res)=>{
     let sampleListing = new Listing({
@@ -66,9 +77,8 @@ app.get("/listings/:id",wrapAsync( async (req, res) => {
 }));
 
 //create Route 
-app.post("/listings",wrapAsync( async (req, res) => {
-   let result =  listingSchema.validate(req.body);
-    console.log(result);
+app.post("/listings",validateListing,wrapAsync( async (req, res) => {
+   
     const  newListing = new Listing(req.body.listing);
    
 
@@ -87,7 +97,7 @@ app.get("/listings/:id/edit", wrapAsync(async (req, res) => {
 
 //update Route 
 
-app.put("/listings/:id",wrapAsync(async (req,res)=>{
+app.put("/listings/:id",validateListing,wrapAsync(async (req,res)=>{
     let {id} = req.params;
    await Listing.findByIdAndUpdate(id,{...req.body.listing});
     res.redirect(`/listings/${id}`);
